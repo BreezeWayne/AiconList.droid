@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="hello">Hello World, AiconListActivity!</string>
+    <string name="app_name">AiconList</string>
+
+    <!-- Direction -->
+    <string name="quit_direction">もう一度押すと終了します</string>
+    
+    
+    <string name="roll_system"></string>
+    <string name="roll_up">↑</string>
+    <string name="roll_left">←</string>
+    <string name="roll_down">↓</string>
+    <string name="roll_right">→</string>
+    <string name="roll_gravity">⟳</string>
+</resources>
