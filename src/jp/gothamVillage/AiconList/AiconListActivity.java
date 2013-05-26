@@ -2,7 +2,6 @@ package jp.gothamVillage.AiconList;
 
 import java.util.List;
 
-import android.R.integer;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -91,7 +90,9 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 			ImageView iv = new ImageView(mContext);
 			iv.setLayoutParams(new LinearLayout.LayoutParams(mIconSize,
 					mIconSize));
-			setRotateDrawable(iv, ai, getNowRotateDegree(getActFlagFromRi(ai)));
+			Drawable d = ai.loadIcon(mPackageManager);
+			String pckName = ai.activityInfo.packageName;
+			setRotateDrawable(iv, d, getNowRotateDegree(getActFlag(pckName)));
 			iv.setOnClickListener(this);
 			iv.setTag(ai);
 			ll.addView(iv);
@@ -121,11 +122,7 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 		return degree;
 	}
 
-	private void setRotateDrawable(ImageView iv, ResolveInfo ai, int degree) {
-		Drawable d = iv.getDrawable();
-		if (d == null) {
-			d = ai.loadIcon(mPackageManager);
-		}
+	private void setRotateDrawable(ImageView iv, Drawable d, int degree) {
 		Bitmap bmp = ((BitmapDrawable) d).getBitmap();
 		Matrix max = new Matrix();
 		max.setRotate(degree);
@@ -192,21 +189,54 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 	}
 
 	private void rotateViewDrawable(View v) {
-		ResolveInfo ai = (ResolveInfo) v.getTag();
-		int actFlag = getActFlagFromRi(ai);
-		int nextDegree = getNextRotateDegree(actFlag);
-		setActFlag(ai, actFlag);
-		setRotateDrawable((ImageView) v, ai, nextDegree);
+		ResolveInfo ri = (ResolveInfo) v.getTag();
+		String pckName = ri.activityInfo.packageName;
+		int nextFlag = getActNextFlag(getActFlag(pckName));
+		int nextDegree = getNowRotateDegree(nextFlag);
+		Drawable d = ((ImageView) v).getDrawable();
+		setRotateDrawable((ImageView) v, d, nextDegree);
+		showCurrentRotatePlanFromFlag(nextFlag);
+		// save in sharedPreference
+		setActFlag(pckName, nextFlag);
 	}
 
-	private void setActFlag(ResolveInfo ai, int actFlag) {
-		String pckName = ai.activityInfo.packageName;
+	private int getActNextFlag(int actFlag) {
+		int nextFlag = actFlag;
+		switch (actFlag) {
+		case ACT_AS_GRAVITY:
+			nextFlag = ACT_AS_SYSTEM;
+			break;
+		case ACT_PORTRAIT_UP:
+			nextFlag = ACT_LANDSCAPE_RIGHT;
+			break;
+		case ACT_LANDSCAPE_RIGHT:
+			nextFlag = ACT_PORTRAIT_DOWN;
+			break;
+		case ACT_PORTRAIT_DOWN:
+			nextFlag = ACT_LANDSCAPE_LEFT;
+			break;
+		case ACT_LANDSCAPE_LEFT:
+			nextFlag = ACT_AS_GRAVITY;
+			break;
+		case ACT_AS_SYSTEM:
+		default:
+			nextFlag = ACT_PORTRAIT_UP;
+			break;
+		}
+		return nextFlag;
+	}
+
+	/**
+	 * Save actFlag in SharedPreferences
+	 * @param pckName key for preference
+	 * @param actFlag object to store
+	 */
+	private void setActFlag(String pckName, int actFlag) {
 		mEditor.putInt(pckName, actFlag);
-		mEditor.commit();		
+		mEditor.commit();
 	}
 
-	private int getActFlagFromRi(ResolveInfo ai) {
-		String pckName = ai.activityInfo.packageName;
+	private int getActFlag(String pckName) {
 		return mPreferences.getInt(pckName, ACT_AS_SYSTEM);
 	}
 
@@ -221,47 +251,14 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 		ResolveInfo ai = (ResolveInfo) v.getTag();
 		String appName = (String) ai.loadLabel(mPackageManager);
 		String pckName = ai.activityInfo.packageName;
-		int plan = mPreferences.getInt(pckName, ACT_AS_SYSTEM);
+		int plan = getActFlag(pckName);
 		mTextView1.setText(appName);
-		tellCurrentRotatePlanFromFlag(plan);
+		showCurrentRotatePlanFromFlag(plan);
 		mHotIconView = v;
 	}
 
-	private void tellCurrentRotatePlanFromFlag(int plan) {
-		mTextView2.setText("Rotate: " + getPlanFromFlag(plan));
-	}
-
-	private int getNextRotateDegree(int actFlag) {
-		int rotateDegree = 0;
-		switch (actFlag) {
-		case ACT_AS_GRAVITY:
-			rotateDegree = 0;
-			actFlag = ACT_AS_SYSTEM;
-			break;
-		case ACT_PORTRAIT_UP:
-			rotateDegree = 90;
-			actFlag = ACT_LANDSCAPE_RIGHT;
-			break;
-		case ACT_LANDSCAPE_RIGHT:
-			rotateDegree = 180;
-			actFlag = ACT_PORTRAIT_DOWN;
-			break;
-		case ACT_PORTRAIT_DOWN:
-			rotateDegree = 270;
-			actFlag = ACT_LANDSCAPE_LEFT;
-			break;
-		case ACT_LANDSCAPE_LEFT:
-			rotateDegree = 0;
-			actFlag = ACT_AS_GRAVITY;
-			break;
-		case ACT_AS_SYSTEM:
-		default:
-			rotateDegree = 0;
-			actFlag = ACT_PORTRAIT_UP;
-			break;
-		}
-		tellCurrentRotatePlanFromFlag(actFlag);
-		return rotateDegree;
+	private void showCurrentRotatePlanFromFlag(int plan) {
+		mTextView2.setText("Rotate: " + getDescriptionFromFlag(plan));
 	}
 
 	@Override
@@ -290,7 +287,7 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 		super.onPause();
 	}
 
-	private String getPlanFromFlag(int flag) {
+	private String getDescriptionFromFlag(int flag) {
 		String planString;
 		switch (flag) {
 		default:
@@ -318,14 +315,12 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		// TODO Auto-generated method stub
 		menu.add(R.string.activate_plan);
 		return super.onCreateOptionsMenu(menu);
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		// TODO Auto-generated method stub
 		if (item.getTitle().equals(getString(R.string.activate_plan))) {
 			Log.v(TAG, "start Srvice");
 			startService(new Intent(mContext, RotateService.class));
