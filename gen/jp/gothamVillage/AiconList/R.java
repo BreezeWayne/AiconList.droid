@@ -14,8 +14,6 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int button1=0x7f050004;
-        public static final int button2=0x7f050005;
         public static final int p=0x7f050003;
         public static final int pp=0x7f050000;
         public static final int selectedAppInfo1=0x7f050001;
@@ -25,6 +23,7 @@ public final class R {
         public static final int main=0x7f030000;
     }
     public static final class string {
+        public static final int activate_plan=0x7f040009;
         public static final int app_name=0x7f040001;
         public static final int hello=0x7f040000;
         /**  Direction 
@@ -36,5 +35,6 @@ public final class R {
         public static final int roll_right=0x7f040007;
         public static final int roll_system=0x7f040003;
         public static final int roll_up=0x7f040004;
+        public static final int sleep_plan=0x7f04000a;
     }
 }

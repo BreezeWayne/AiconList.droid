@@ -2,6 +2,7 @@ package jp.gothamVillage.AiconList;
 
 import java.util.List;
 
+import android.R.integer;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -12,11 +13,13 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
@@ -50,8 +53,9 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 						// mIconNum;
 		mIconNum = (mWindowManager.getDefaultDisplay().getWidth() - 5 * 2)
 				/ mIconSize;
+		mIconSizeLarge = (int) (mIconSize * 1.8);
 		mService = new Intent(mContext, RotateService.class);
-		mLastView = null;
+		mHotIconView = null;
 		mEditor = mPreferences.edit();
 	}
 
@@ -59,10 +63,6 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 		mParentLayout = (LinearLayout) findViewById(R.id.p);
 		mTextView1 = (TextView) findViewById(R.id.selectedAppInfo1);
 		mTextView2 = (TextView) findViewById(R.id.selectedAppInfo2);
-		mStartService = (Button) findViewById(R.id.button1);
-		mStopService = (Button) findViewById(R.id.button2);
-		mStartService.setOnClickListener(serviceEnabler);
-		mStopService.setOnClickListener(serviceEnabler);
 		setUpAiconList();
 	}
 
@@ -122,7 +122,10 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 	}
 
 	private void setRotateDrawable(ImageView iv, ResolveInfo ai, int degree) {
-		Drawable d = ai.loadIcon(mPackageManager);
+		Drawable d = iv.getDrawable();
+		if (d == null) {
+			d = ai.loadIcon(mPackageManager);
+		}
 		Bitmap bmp = ((BitmapDrawable) d).getBitmap();
 		Matrix max = new Matrix();
 		max.setRotate(degree);
@@ -134,24 +137,72 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 
 	public void onClick(View v) {
 		doonIfNotDoon(v);
-		fireTouchTimer();
 	}
 
+	// 1 Is v hot ?
+	// yes -> then rotate its drawable
+	// no -> then cool the v
 	private void doonIfNotDoon(View v) {
 		// Log.i("##", "aa bb cc dd " + duringDoon);
-		if (duringDoon == 0) {
-			enlargeIcon(v);
+
+		if (duringDoonCnt == 0) {
+			heatIcon(v);
 		} else {
-			if (mLastView != v) {
-				mHandler.removeCallbacks(mRunnableOfCalmDown);
-				mHandler.postAtFrontOfQueue(mRunnableOfCalmDown);
-				return;
+			if (mHotIconView == v) {
+				// Rotate during doon
+				rotateViewDrawable(v);
+			} else {
+				// cool the Icon
+				dislargeIcon();
 			}
-			// Rotate during doon
-			ResolveInfo ai = (ResolveInfo) v.getTag();
-			getActFlagFromRi(ai);
-			setRotateDrawable((ImageView) v, ai, getNextRotateDegree(ai));
 		}
+		manageHotTimer();
+	}
+
+	private void heatIcon(View v) {
+		enlargeIcon(v);
+		showAppInfo(v);
+	}
+
+	private void manageHotTimer() {
+		duringDoonCnt++;
+		mHandler.postDelayed(new Runnable() {
+			public void run() {
+				checkExpiredOfTouch();
+			}
+		}, hotIronTime);
+	}
+
+	private void checkExpiredOfTouch() {
+		duringDoonCnt--;
+		if (duringDoonCnt == 0) {
+			dislargeIcon();
+		}
+	}
+
+	private void dislargeIcon() {
+		if (mHotIconView != null) {
+			android.view.ViewGroup.LayoutParams lllp = mHotIconView
+					.getLayoutParams();
+			lllp.width = mIconSize;
+			lllp.height = mIconSize;
+			mHotIconView.setLayoutParams(lllp);
+			mHotIconView = null;
+		}
+	}
+
+	private void rotateViewDrawable(View v) {
+		ResolveInfo ai = (ResolveInfo) v.getTag();
+		int actFlag = getActFlagFromRi(ai);
+		int nextDegree = getNextRotateDegree(actFlag);
+		setActFlag(ai, actFlag);
+		setRotateDrawable((ImageView) v, ai, nextDegree);
+	}
+
+	private void setActFlag(ResolveInfo ai, int actFlag) {
+		String pckName = ai.activityInfo.packageName;
+		mEditor.putInt(pckName, actFlag);
+		mEditor.commit();		
 	}
 
 	private int getActFlagFromRi(ResolveInfo ai) {
@@ -159,49 +210,29 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 		return mPreferences.getInt(pckName, ACT_AS_SYSTEM);
 	}
 
-	private void fireTouchTimer() {
-		duringDoon++;
-		mHandler.postDelayed(mRunnableOfCalmDown = new Runnable() {
-			public void run() {
-				duringDoon--;
-				checkExpiredOfTouch();
-			}
-		}, concreteTime);
-	}
-
-	private void checkExpiredOfTouch() {
-		if (duringDoon == 0) {
-			dislargeIcon();
-		}
-	}
-
-	private void dislargeIcon() {
-		if (mLastView != null) {
-			mLastView.setLayoutParams(new LinearLayout.LayoutParams(mIconSize,
-					mIconSize));
-		}
-	}
-
 	private void enlargeIcon(View v) {
-		int highSize = (int) (mIconSize * 1.8);
-		v.setLayoutParams(new LinearLayout.LayoutParams(highSize, highSize));
+		android.view.ViewGroup.LayoutParams lllp = v.getLayoutParams();
+		lllp.width = mIconSizeLarge;
+		lllp.height = mIconSizeLarge;
+		v.setLayoutParams(lllp);
+	}
+
+	private void showAppInfo(View v) {
 		ResolveInfo ai = (ResolveInfo) v.getTag();
 		String appName = (String) ai.loadLabel(mPackageManager);
 		String pckName = ai.activityInfo.packageName;
 		int plan = mPreferences.getInt(pckName, ACT_AS_SYSTEM);
 		mTextView1.setText(appName);
 		tellCurrentRotatePlanFromFlag(plan);
-		mLastView = v;
+		mHotIconView = v;
 	}
 
 	private void tellCurrentRotatePlanFromFlag(int plan) {
 		mTextView2.setText("Rotate: " + getPlanFromFlag(plan));
 	}
 
-	private int getNextRotateDegree(ResolveInfo ai) {
+	private int getNextRotateDegree(int actFlag) {
 		int rotateDegree = 0;
-		String pckName = ai.activityInfo.packageName;
-		int actFlag = mPreferences.getInt(pckName, ACT_AS_SYSTEM);
 		switch (actFlag) {
 		case ACT_AS_GRAVITY:
 			rotateDegree = 0;
@@ -229,8 +260,6 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 			actFlag = ACT_PORTRAIT_UP;
 			break;
 		}
-		mEditor.putInt(pckName, actFlag);
-		mEditor.commit();
 		tellCurrentRotatePlanFromFlag(actFlag);
 		return rotateDegree;
 	}
@@ -243,6 +272,12 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 					Toast.LENGTH_SHORT);
 			mToast.setGravity(Gravity.CENTER, 0, -20);
 			mToast.show();
+			mHandler.postDelayed(new Runnable() {
+				@Override
+				public void run() {
+					asking_quit_ok = false;
+				}
+			}, 2000);
 		} else {
 			super.onBackPressed();
 		}
@@ -279,5 +314,27 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 			break;
 		}
 		return planString;
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// TODO Auto-generated method stub
+		menu.add(R.string.activate_plan);
+		return super.onCreateOptionsMenu(menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// TODO Auto-generated method stub
+		if (item.getTitle().equals(getString(R.string.activate_plan))) {
+			Log.v(TAG, "start Srvice");
+			startService(new Intent(mContext, RotateService.class));
+			item.setTitle(getString(R.string.sleep_plan));
+		} else {
+			stopService(new Intent(mContext, RotateService.class));
+			Log.v(TAG, "stop Srvice");
+			item.setTitle(getString(R.string.activate_plan));
+		}
+		return super.onOptionsItemSelected(item);
 	}
 }

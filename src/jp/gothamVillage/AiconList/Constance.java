@@ -9,5 +9,5 @@ public interface Constance {
 	final static int ACT_PORTRAIT_DOWN = 3;
 	final static int ACT_LANDSCAPE_LEFT = 4;
 
-	int concreteTime = 1300;// in milli-seconds
+	int hotIronTime = 1300;// in milli-seconds
 }

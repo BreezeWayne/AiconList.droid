@@ -14,4 +14,8 @@
     <string name="roll_down">↓</string>
     <string name="roll_right">→</string>
     <string name="roll_gravity">⟳</string>
+    
+    
+    <string name="activate_plan">Activate Plan</string>
+    <string name="sleep_plan">Sleep Plan</string>
 </resources>
