@@ -19,19 +19,19 @@ public class RotateService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		TAG = getClass().getSimpleName();
-		Log.v(TAG, "create Srv");
+		Log.v(TAG, "create Serv");
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		Log.v(TAG, "Srvice on the run");
+		Log.v(TAG, "Service on the run");
 		Toast.makeText(getApplicationContext(), "ONTHERUN", Toast.LENGTH_SHORT).show();
 		return START_STICKY;
 	}
 
 	@Override
 	public void onDestroy() {
-		Log.v(TAG, "Srvice on the bed");
+		Log.v(TAG, "Service on the bed");
 		Toast.makeText(getApplicationContext(), "ONTHEBED", Toast.LENGTH_SHORT).show();
 		super.onDestroy();
 	}

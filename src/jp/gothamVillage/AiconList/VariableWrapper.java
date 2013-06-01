@@ -36,4 +36,5 @@ abstract class VariableWrapper extends Activity {
 	protected int duringDoonCnt = 0;
 	protected Runnable mRunnableToCalmDown;
 	protected Intent mService;
+	protected String mServiceName;
 }

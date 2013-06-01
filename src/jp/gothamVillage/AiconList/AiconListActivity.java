@@ -2,6 +2,9 @@ package jp.gothamVillage.AiconList;
 
 import java.util.List;
 
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -54,6 +57,7 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 				/ mIconSize;
 		mIconSizeLarge = (int) (mIconSize * 1.8);
 		mService = new Intent(mContext, RotateService.class);
+		mServiceName = RotateService.class.getName();
 		mHotIconView = null;
 		mEditor = mPreferences.edit();
 	}
@@ -103,12 +107,6 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 	private int getNowRotateDegree(int actFlag) {
 		int degree;
 		switch (actFlag) {
-		case ACT_AS_GRAVITY:
-		case ACT_AS_SYSTEM:
-		case ACT_PORTRAIT_UP:
-		default:
-			degree = 0;
-			break;
 		case ACT_LANDSCAPE_RIGHT:
 			degree = (90);
 			break;
@@ -118,11 +116,18 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 		case ACT_LANDSCAPE_LEFT:
 			degree = (270);
 			break;
+		case ACT_AS_GRAVITY:
+		case ACT_AS_SYSTEM:
+		case ACT_PORTRAIT_UP:
+		default:
+			degree = 0;
+			break;
 		}
 		return degree;
 	}
 
 	private void setRotateDrawable(ImageView iv, Drawable d, int degree) {
+		// ResolveInfo ri = (ResolveInfo) iv.getTag();
 		Bitmap bmp = ((BitmapDrawable) d).getBitmap();
 		Matrix max = new Matrix();
 		max.setRotate(degree);
@@ -203,9 +208,6 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 	private int getActNextFlag(int actFlag) {
 		int nextFlag = actFlag;
 		switch (actFlag) {
-		case ACT_AS_GRAVITY:
-			nextFlag = ACT_AS_SYSTEM;
-			break;
 		case ACT_PORTRAIT_UP:
 			nextFlag = ACT_LANDSCAPE_RIGHT;
 			break;
@@ -218,6 +220,9 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 		case ACT_LANDSCAPE_LEFT:
 			nextFlag = ACT_AS_GRAVITY;
 			break;
+		case ACT_AS_GRAVITY:
+			nextFlag = ACT_AS_SYSTEM;
+			break;
 		case ACT_AS_SYSTEM:
 		default:
 			nextFlag = ACT_PORTRAIT_UP;
@@ -228,8 +233,11 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 
 	/**
 	 * Save actFlag in SharedPreferences
-	 * @param pckName key for preference
-	 * @param actFlag object to store
+	 * 
+	 * @param pckName
+	 *            key for preference
+	 * @param actFlag
+	 *            object to store
 	 */
 	private void setActFlag(String pckName, int actFlag) {
 		mEditor.putInt(pckName, actFlag);
@@ -311,6 +319,29 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 			break;
 		}
 		return planString;
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		boolean isServiceRunning = isServiceRunnning(mContext);
+		if (isServiceRunning) {
+			menu.getItem(0).setTitle(R.string.sleep_plan);
+		} else {
+			menu.getItem(0).setTitle(R.string.activate_plan);
+		}
+		return super.onPrepareOptionsMenu(menu);
+	}
+
+	private boolean isServiceRunnning(Context context) {
+		ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+		List<RunningServiceInfo> services = am
+				.getRunningServices(Integer.MAX_VALUE);
+		for (RunningServiceInfo s : services) {
+			if (s.service.getClassName().equals(mServiceName)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
