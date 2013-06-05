@@ -6,7 +6,7 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
-public class RotateService extends Service {
+public class RotateService extends Service implements Constance {
 	private String TAG;
 
 	@Override

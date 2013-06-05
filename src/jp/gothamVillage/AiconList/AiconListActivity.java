@@ -2,8 +2,6 @@ package jp.gothamVillage.AiconList;
 
 import java.util.List;
 
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -60,6 +58,13 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 		mServiceName = RotateService.class.getName();
 		mHotIconView = null;
 		mEditor = mPreferences.edit();
+		mYouthRunnable = new Runnable() {
+			public void run() {
+				duringDoonCnt--;
+				Log.v(TAG, "AAAAAA");
+				checkExpiredOfTouch();
+			}
+		};
 	}
 
 	private void viewsSetup() {
@@ -153,30 +158,28 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 			if (mHotIconView == v) {
 				// Rotate during doon
 				rotateViewDrawable(v);
+				manageHotTimer();
 			} else {
 				// cool the Icon
+				mHandler.removeCallbacks(mYouthRunnable);
 				dislargeIcon();
+				duringDoonCnt = 0;
 			}
 		}
-		manageHotTimer();
 	}
 
 	private void heatIcon(View v) {
 		enlargeIcon(v);
 		showAppInfo(v);
+		manageHotTimer();
 	}
 
 	private void manageHotTimer() {
 		duringDoonCnt++;
-		mHandler.postDelayed(new Runnable() {
-			public void run() {
-				checkExpiredOfTouch();
-			}
-		}, hotIronTime);
+		mHandler.postDelayed(mYouthRunnable, hotIronTime);
 	}
 
 	private void checkExpiredOfTouch() {
-		duringDoonCnt--;
 		if (duringDoonCnt == 0) {
 			dislargeIcon();
 		}
@@ -233,7 +236,6 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 
 	/**
 	 * Save actFlag in SharedPreferences
-	 * 
 	 * @param pckName
 	 *            key for preference
 	 * @param actFlag
@@ -278,7 +280,6 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 			mToast.setGravity(Gravity.CENTER, 0, -20);
 			mToast.show();
 			mHandler.postDelayed(new Runnable() {
-				@Override
 				public void run() {
 					asking_quit_ok = false;
 				}
@@ -333,15 +334,7 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 	}
 
 	private boolean isServiceRunnning(Context context) {
-		ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-		List<RunningServiceInfo> services = am
-				.getRunningServices(Integer.MAX_VALUE);
-		for (RunningServiceInfo s : services) {
-			if (s.service.getClassName().equals(mServiceName)) {
-				return true;
-			}
-		}
-		return false;
+		return mPreferences.getBoolean(KEY_SERVICE_RUNNING, false);
 	}
 
 	@Override
@@ -353,13 +346,13 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if (item.getTitle().equals(getString(R.string.activate_plan))) {
-			Log.v(TAG, "start Srvice");
+			Log.v(TAG, "start Service");
 			startService(new Intent(mContext, RotateService.class));
-			item.setTitle(getString(R.string.sleep_plan));
+			mEditor.putBoolean(KEY_SERVICE_RUNNING, true).commit();
 		} else {
+			Log.v(TAG, "stop Service");
 			stopService(new Intent(mContext, RotateService.class));
-			Log.v(TAG, "stop Srvice");
-			item.setTitle(getString(R.string.activate_plan));
+			mEditor.putBoolean(KEY_SERVICE_RUNNING, false).commit();
 		}
 		return super.onOptionsItemSelected(item);
 	}

@@ -37,4 +37,6 @@ abstract class VariableWrapper extends Activity {
 	protected Runnable mRunnableToCalmDown;
 	protected Intent mService;
 	protected String mServiceName;
+	boolean runService;
+	protected Runnable mYouthRunnable;
 }

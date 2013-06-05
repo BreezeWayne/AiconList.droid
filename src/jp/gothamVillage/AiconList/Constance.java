@@ -10,5 +10,5 @@ public interface Constance {
 	final static int ACT_LANDSCAPE_LEFT = 0x80;
 
 	int hotIronTime = 1300;// in milli-seconds
-	
+	final static String KEY_SERVICE_RUNNING = "pref_service_running";
 }
