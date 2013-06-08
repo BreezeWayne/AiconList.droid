@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -20,6 +21,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
@@ -99,14 +101,25 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 			ImageView iv = new ImageView(mContext);
 			iv.setLayoutParams(new LinearLayout.LayoutParams(mIconSize,
 					mIconSize));
+			iv.setBackgroundColor(Color.BLUE);
 			Drawable d = ai.loadIcon(mPackageManager);
 			String pckName = ai.activityInfo.packageName;
 			setRotateDrawable(iv, d, getNowRotateDegree(getActFlag(pckName)));
-			iv.setOnClickListener(this);
 			iv.setTag(ai);
+			iv.setOnClickListener(this);
 			ll.addView(iv);
 			appCnt++;
 		}
+		// additional 
+//		ll = new LinearLayout(mContext);
+//		ll.setLayoutParams(new LinearLayout.LayoutParams(
+//				LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+//		ll.setOrientation(LinearLayout.HORIZONTAL);
+		Button all_the_apps = new Button(mContext);
+		all_the_apps.setLayoutParams(new LinearLayout.LayoutParams(
+				LayoutParams.MATCH_PARENT, mIconSize));
+		all_the_apps.setText("set All the Apps (" + appCnt + ")");
+		mParentLayout.addView(all_the_apps);
 	}
 
 	private int getNowRotateDegree(int actFlag) {
@@ -193,6 +206,8 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 			lllp.height = mIconSize;
 			mHotIconView.setLayoutParams(lllp);
 			mHotIconView = null;
+			mTextView1.setText("");
+			mTextView2.setText("");
 		}
 	}
 
@@ -201,6 +216,11 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 		String pckName = ri.activityInfo.packageName;
 		int nextFlag = getActNextFlag(getActFlag(pckName));
 		int nextDegree = getNowRotateDegree(nextFlag);
+		if (nextFlag == ACT_AS_GRAVITY || nextFlag == ACT_LANDSCAPE_LEFT
+				|| nextFlag == ACT_PORTRAIT_DOWN
+				|| nextFlag == ACT_LANDSCAPE_LEFT) {
+			nextDegree = 90;
+		}
 		Drawable d = ((ImageView) v).getDrawable();
 		setRotateDrawable((ImageView) v, d, nextDegree);
 		showCurrentRotatePlanFromFlag(nextFlag);
@@ -268,7 +288,7 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 	}
 
 	private void showCurrentRotatePlanFromFlag(int plan) {
-		mTextView2.setText("Rotate: " + getDescriptionFromFlag(plan));
+		mTextView2.setText(getDescriptionFromFlag(plan));
 	}
 
 	@Override
@@ -301,10 +321,10 @@ public class AiconListActivity extends VariableWrapper implements Constance,
 		switch (flag) {
 		default:
 		case ACT_AS_SYSTEM:
-			planString = "AS_SYSTEM" + getString(R.string.roll_system);
+			planString = "BY_SYSTEM" + getString(R.string.roll_system);
 			break;
 		case ACT_AS_GRAVITY:
-			planString = "AS_GRAVITY" + getString(R.string.roll_gravity);
+			planString = "BY_GRAVITY" + getString(R.string.roll_gravity);
 			break;
 		case ACT_LANDSCAPE_LEFT:
 			planString = "LANDSCAPE_LEFT" + getString(R.string.roll_left);

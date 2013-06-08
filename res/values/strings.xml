@@ -8,12 +8,12 @@
     <string name="quit_direction">もう一度押すと終了します</string>
     
     
-    <string name="roll_system"></string>
+    <string name="roll_system">(S)</string>
     <string name="roll_up">↑</string>
     <string name="roll_left">←</string>
     <string name="roll_down">↓</string>
     <string name="roll_right">→</string>
-    <string name="roll_gravity">⟳</string>
+    <string name="roll_gravity">(G)</string>
     
     
     <string name="activate_plan">Activate Plan</string>
